@@ -82,6 +82,20 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
+// Health check — outside startServer so always available
+app.get('/api/health', (req, res) => {
+  const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    status: 'ok',
+    mongodb: states[mongoose.connection.readyState] || 'unknown',
+    env: {
+      hasMongoUri: !!process.env.MONGO_URI,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      allowedOrigin: process.env.ALLOWED_ORIGIN || 'not set'
+    }
+  });
+});
+
 async function startServer() {
   const mongoUri = process.env.MONGO_URI;
 
