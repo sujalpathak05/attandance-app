@@ -113,10 +113,9 @@ export default function AttendanceManager() {
             </thead>
             <tbody>
               {records.map(rec => (
-                <tr key={rec._id} className={`border-b border-gray-100 hover:bg-gray-50 ${rec.isAdminEdited ? 'bg-yellow-50' : ''}`}>
+                <tr key={rec._id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4">
                     <p className="font-medium text-gray-800">{formatDate(rec.date + 'T00:00:00')}</p>
-                    {rec.isAdminEdited && <span className="text-xs text-orange-500">Admin edited</span>}
                   </td>
                   <td className="py-3 px-4">
                     <p className="font-medium text-gray-800">{rec.employee?.name}</p>
