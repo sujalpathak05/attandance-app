@@ -58,7 +58,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── 7. GLOBAL RATE LIMIT — all routes (100 req/15min per IP) ─────────────────
+// ── 7. TRUST PROXY (Render/Netlify run behind load balancers) ────────────────
+app.set('trust proxy', 1);
+
+// ── 8. GLOBAL RATE LIMIT — all routes (100 req/15min per IP) ─────────────────
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -68,7 +71,7 @@ const globalLimiter = rateLimit({
 });
 app.use('/api/', globalLimiter);
 
-// ── 8. STRICT RATE LIMIT on login (5 attempts / 15min) ───────────────────────
+// ── 9. STRICT RATE LIMIT on login (5 attempts / 15min) ───────────────────────
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -80,25 +83,20 @@ const loginLimiter = rateLimit({
 app.use('/api/auth/login', loginLimiter);
 
 async function startServer() {
-  let mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGO_URI;
+
+  if (!mongoUri) {
+    console.error('MONGO_URI environment variable not set!');
+    process.exit(1);
+  }
 
   try {
-    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
     console.log('MongoDB Atlas Connected!');
     await seedAdminForPreview();
-  } catch {
-    console.log('Atlas connection failed. Starting in-memory MongoDB for preview...');
-    try {
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mongod = await MongoMemoryServer.create();
-      mongoUri = mongod.getUri();
-      await mongoose.connect(mongoUri);
-      console.log('In-memory MongoDB started');
-      await seedAdminForPreview();
-    } catch (err) {
-      console.error('Failed to start MongoDB:', err.message);
-      process.exit(1);
-    }
+  } catch (err) {
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
   }
 
   app.use('/api/auth', require('./routes/auth'));
