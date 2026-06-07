@@ -46,27 +46,15 @@ app.use(mongoSanitize({ replaceWith: '_' }));
 // ── 5. HTTP PARAMETER POLLUTION PREVENTION ───────────────────────────────────
 app.use(hpp());
 
-// ── 6. PROXY / SUSPICIOUS REQUEST BLOCKING ───────────────────────────────────
+// ── 6. MALICIOUS BOT BLOCKING ────────────────────────────────────────────────
+// Note: X-Forwarded-For chain check removed — cloud platforms (Render, Netlify)
+// legitimately add multiple IPs via their load balancers.
 app.use((req, res, next) => {
-  // Block requests that come through proxies/VPNs in production
-  const suspiciousHeaders = ['via', 'x-forwarded-server', 'x-real-ip'];
-  const hasSuspicious = suspiciousHeaders.some(h => req.headers[h]);
-
-  // Only block if X-Forwarded-For contains multiple IPs (proxy chain)
-  const forwarded = req.headers['x-forwarded-for'];
-  const isProxyChain = forwarded && forwarded.split(',').length > 1;
-
-  if (isProxyChain) {
-    return res.status(403).json({ message: 'Access denied: proxy not allowed' });
-  }
-
-  // Block known bad user-agents (bots, scanners)
   const ua = req.headers['user-agent'] || '';
-  const badAgents = ['sqlmap', 'nikto', 'nmap', 'masscan', 'zgrab', 'python-requests/2.', 'curl/'];
+  const badAgents = ['sqlmap', 'nikto', 'nmap', 'masscan', 'zgrab'];
   if (badAgents.some(b => ua.toLowerCase().includes(b.toLowerCase()))) {
     return res.status(403).json({ message: 'Access denied' });
   }
-
   next();
 });
 
