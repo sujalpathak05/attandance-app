@@ -13,6 +13,6 @@ echo.
 echo ============================================
 echo  Backend  : http://localhost:5001
 echo  Frontend : http://localhost:3000
-echo  Admin    : admin@company.com / Admin@123
+echo  Admin    : See backend/.env for credentials
 echo ============================================
 pause

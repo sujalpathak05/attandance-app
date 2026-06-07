@@ -121,25 +121,27 @@ async function startServer() {
     console.log(`\nServer running on port ${PORT}`);
     console.log('Security: helmet | rate-limit | mongo-sanitize | hpp | proxy-block');
     console.log('─────────────────────────────────');
-    console.log('Admin Login:');
-    console.log('  Email   : admin@company.com');
-    console.log('  Password: Admin@123');
+    console.log(`Admin: ${process.env.ADMIN_EMAIL || 'admin@company.com'}`);
     console.log('─────────────────────────────────');
   });
 }
 
 async function seedAdminForPreview() {
   const User = require('./models/User');
-  const exists = await User.findOne({ email: 'admin@company.com' });
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@company.com').toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+  const adminName = process.env.ADMIN_NAME || 'Super Admin';
+
+  // Remove old default admin if a new one is configured
+  if (process.env.ADMIN_EMAIL) {
+    await User.findOneAndDelete({ email: 'admin@company.com' });
+  }
+
+  const exists = await User.findOne({ email: adminEmail });
   if (!exists) {
-    const admin = new User({
-      name: 'Super Admin',
-      email: 'admin@company.com',
-      password: 'Admin@123',
-      role: 'admin'
-    });
+    const admin = new User({ name: adminName, email: adminEmail, password: adminPassword, role: 'admin' });
     await admin.save();
-    console.log('Default admin seeded');
+    console.log(`Admin seeded: ${adminEmail}`);
   }
 }
 
